@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Tampa Restock Radar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: sticky header + tabs; Day view = schedule list beside a route map (stacks on phones). */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --surface2:#F6F8FA; --ink:#141A26; --muted:#596476; --line:#D5DBE4;
+  --route:#6D28D9; --route-soft:#EDE7FB; --alt:#E05A0C; --alt-soft:#FDEBDD;
+  --target:#B91C1C; --walmart:#1D4ED8; --sams:#15803D; --t-soft:#FDF0F0; --w-soft:#EEF3FE; --s-soft:#ECF8F0;
+  --now:#F59E0B; --now-soft:#FEF3C7; --star:#B45309; --danger:#B42318;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E131B; --surface:#161D28; --surface2:#1C2431; --ink:#E7EBF1; --muted:#98A2B3; --line:#2B3443;
+  --route:#A78BFA; --route-soft:#2A2145; --alt:#FB923C; --alt-soft:#3A2416;
+  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E;
+  --now:#F59E0B; --now-soft:#3A2E0E; --star:#FBBF24; --danger:#F97066; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E131B; --surface:#161D28; --surface2:#1C2431; --ink:#E7EBF1; --muted:#98A2B3; --line:#2B3443;
+  --route:#A78BFA; --route-soft:#2A2145; --alt:#FB923C; --alt-soft:#3A2416;
+  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E;
+  --now:#F59E0B; --now-soft:#3A2E0E; --star:#FBBF24; --danger:#F97066; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1320px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.brand h1{font-family:var(--f-display);font-stretch:78%;font-weight:800;font-size:1.65rem;letter-spacing:.01em;margin:0;text-transform:uppercase}
+.brand h1 b{color:var(--route)}
+.brand .sub{color:var(--muted);font-size:.85rem}
+.spacer{flex:1}
+.stamp{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:8px;padding:7px 12px;font-weight:600;font-size:.88rem}
+.btn:hover{border-color:var(--route)}
+.btn.primary{background:var(--route);border-color:var(--route);color:#fff}
+:root:not([data-theme="light"]) .btn.primary{color:#fff}
+.btn:focus-visible,.tab:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--now);outline-offset:2px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:0 0}
+.tab{border:0;background:none;color:var(--muted);padding:9px 12px;font-weight:700;font-size:.9rem;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--route)}
+main{padding-block:16px 48px}
+.days{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.85rem;display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .today{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--now);color:#111;border-radius:999px;padding:1px 6px}
+.toggle{display:inline-flex;align-items:center;gap:8px;margin-left:auto;font-size:.86rem;color:var(--muted);font-weight:600}
+.toggle input{width:18px;height:18px;accent-color:var(--route)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
+@media (max-width:540px){.grid{grid-template-columns:minmax(0,1fr)}}
+.list{display:flex;flex-direction:column;gap:10px;min-width:0}
+.slot-h{font-family:var(--f-mono);font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 0;display:flex;align-items:center;gap:8px}
+.slot-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.slot-h.now{color:var(--star)}
+.slot-h.now::before{content:"NOW";background:var(--now);color:#111;border-radius:4px;padding:1px 6px;letter-spacing:.08em}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--c,var(--line));border-radius:var(--r);padding:12px 14px;display:grid;gap:4px;min-width:0}
+.card.T{--chain:var(--target);--soft:var(--t-soft)} .card.W{--chain:var(--walmart);--soft:var(--w-soft)} .card.S{--chain:var(--sams);--soft:var(--s-soft)}
+.card{--c:var(--chain)}
+.card.weak:not(.added){--c:var(--muted);background:var(--surface2);color:var(--muted)}
+.card.weak:not(.added) .at,.card.weak:not(.added) .kv b{color:var(--muted)}
+.card.weak:not(.added) .kind,.card.weak:not(.added) .stars,.card.weak:not(.added) .badge{filter:grayscale(1);opacity:.75}
+.card.weak:not(.added) .weaknote{background:var(--surface)}
+.card.mine:not(.weak){background:linear-gradient(90deg,var(--soft),var(--surface) 70%)}
+.card .row1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card .name{font-family:var(--f-display);font-stretch:85%;font-weight:800;font-size:1.18rem;color:var(--c)}
+.card .at{font-family:var(--f-mono);font-weight:700;font-size:.95rem}
+.badge{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-radius:6px;padding:2px 7px}
+.badge.stop{background:var(--route);color:#fff}
+.badge.opt{background:var(--alt-soft);color:var(--alt);border:1px solid var(--alt)}
+.badge.mine{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.meta{color:var(--muted);font-size:.85rem}
+.stars{color:var(--star);font-weight:800;letter-spacing:.04em}
+.kv{font-size:.86rem}
+.kv b{font-weight:700}
+.tip{font-size:.84rem;color:var(--muted)}
+.mapcol{position:sticky;top:112px;min-width:0}
+@media (max-width:540px){.mapcol{position:static}}
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.mapbox svg{display:block;width:100%;height:auto;max-height:78vh}
+:root[data-theme="dark"] .mapbox image{filter:brightness(.82) contrast(1.05)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mapbox image{filter:brightness(.82) contrast(1.05)}}
+.mapfoot{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:9px 12px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg i{display:inline-block;width:26px;height:0;border-top:4px solid var(--route)}
+.lg i.d{border-top:4px dotted var(--alt)}
+.hint{background:var(--route-soft);border:1px solid var(--route);border-radius:var(--r);padding:10px 12px;font-size:.88rem}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:18px;color:var(--muted)}
+.upnext{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.un{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:grid;gap:2px;min-width:0}
+.un .k{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.un .v{font-family:var(--f-display);font-stretch:85%;font-weight:800;font-size:1.1rem}
+.un .t{font-family:var(--f-mono);font-size:.85rem}
+/* week */
+.weekwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table.week{border-collapse:collapse;min-width:980px;width:100%;font-size:.82rem}
+table.week th,table.week td{border:1px solid var(--line);padding:6px;vertical-align:top}
+table.week thead th{background:var(--surface2);font-family:var(--f-display);font-stretch:85%;font-size:1rem;text-transform:uppercase;position:sticky;top:0}
+table.week th.today{background:var(--now);color:#111}
+table.week th.slot{font-family:var(--f-mono);font-size:.75rem;white-space:nowrap;background:var(--surface2);text-align:center;width:84px}
+table.week th.slot.now{background:var(--now);color:#111}
+table.week td.nowcell{background:var(--now-soft)}
+.wchip{display:block;border-left:4px solid var(--c);background:var(--surface2);border-radius:5px;padding:4px 6px;margin-bottom:4px}
+.wchip.T{--c:var(--target)} .wchip.W{--c:var(--walmart)} .wchip.S{--c:var(--sams)}
+.wchip b{color:var(--c);font-weight:800}
+.wchip.mine{outline:2px solid var(--route);outline-offset:-1px}
+.wchip span{display:block;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+/* log */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select,.field input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table.log{border-collapse:collapse;width:100%;font-size:.84rem;min-width:760px}
+table.log th,table.log td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.log th{background:var(--surface2);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+table.log td.d{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cT{color:var(--target);font-weight:700}.cW{color:var(--walmart);font-weight:700}.cS{color:var(--sams);font-weight:700}
+.pill{font-size:.7rem;font-weight:800;border-radius:999px;padding:2px 8px;background:var(--surface2);border:1px solid var(--line);white-space:nowrap}
+.pill.High{background:var(--s-soft);color:var(--sams);border-color:var(--sams)}
+.pill.Low{color:var(--muted)}
+/* modal */
+.overlay{position:fixed;inset:0;z-index:20;background:rgba(10,14,20,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px))}
+.modal{background:var(--surface);color:var(--ink);border-radius:14px;max-width:760px;width:100%;padding:22px;display:grid;gap:16px;border:1px solid var(--line)}
+.modal h2{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:1.7rem;margin:0;text-transform:uppercase;text-wrap:balance}
+.modal p{margin:0;color:var(--muted)}
+.field{display:grid;gap:6px}
+.field label{font-weight:700;font-size:.9rem}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.group h3{margin:0 0 6px;font-family:var(--f-display);font-stretch:85%;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}
+.group.T h3{color:var(--target)}.group.W h3{color:var(--walmart)}.group.S h3{color:var(--sams)}
+.check{display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-radius:6px;font-size:.9rem}
+.check:hover{background:var(--surface2)}
+.check input{width:18px;height:18px;margin-top:1px;accent-color:var(--route);flex:none}
+.check small{display:block;color:var(--muted);font-size:.76rem}
+.actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+.note{font-size:.82rem;color:var(--muted)}
+.err{color:var(--danger);font-size:.85rem;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:.88rem;z-index:30}
+
+.mapbox{position:relative}
+.mapempty{padding:28px 18px;color:var(--muted);text-align:center;font-size:.9rem}
+#map .pin{cursor:pointer;outline:none}
+#map .pin:hover .dot,#map .pin:focus .dot{stroke-width:2.2%}
+#map .pin:focus-visible .lab{stroke:#F59E0B}
+.pop{position:absolute;z-index:4;width:min(300px,calc(100% - 16px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(10,14,20,.22);padding:12px 12px 10px;display:grid;gap:6px;font-size:.85rem}
+.pop-h{display:flex;align-items:center;gap:8px}
+.pop-h b{font-family:var(--f-display);font-stretch:85%;font-size:1.08rem;flex:1;min-width:0}
+.pop-tag{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-radius:6px;padding:2px 6px;white-space:nowrap}
+.pop-tag.stop{background:var(--route);color:#fff}.pop-tag.opt{background:var(--alt-soft);color:var(--alt);border:1px solid var(--alt)}
+.pop-x{border:0;background:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:0 4px}
+.pop-row{display:flex;gap:8px;align-items:baseline}
+.pop-k{flex:none;width:84px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pop-m{color:var(--muted);font-size:.8rem}
+.pop-note{color:var(--muted);font-size:.82rem}
+.kind{font-size:.72rem;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.kind.v{background:var(--w-soft);color:var(--walmart);border:1px solid var(--walmart)}
+.kind.e{background:var(--now-soft);color:var(--star);border:1px solid var(--now)}
+.kind.u{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.card.weak{border:2px dashed var(--line);border-left:5px dashed var(--c);background:var(--surface)}
+.weaknote{font-size:.84rem;background:var(--surface2);border-radius:8px;padding:7px 9px}
+.addmap{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;font-weight:700;color:var(--route);cursor:pointer;margin-top:2px}
+.addmap input{width:18px;height:18px;accent-color:var(--route)}
+.linkish{border:0;background:none;padding:0;text-align:left;cursor:pointer}
+.linkish:hover{text-decoration:underline}
+
+.zoomctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:3}
+.zb{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.15rem;font-weight:800;line-height:1;box-shadow:0 2px 6px rgba(10,14,20,.15)}
+.zb:hover{border-color:var(--route)}
+#map svg{touch-action:none;cursor:grab}
+#map svg:active{cursor:grabbing}
+#map{position:relative}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <div class="brand"><h1>Restock <b>Radar</b></h1><span class="sub">Tampa · Brandon · Riverview · Pasco</span></div>
+      <div class="spacer"></div>
+      <span class="stamp" id="stamp">Loading…</span>
+      <button class="btn" id="btnStores" type="button">My stores</button>
+      <button class="btn" id="btnXlsx" type="button" hidden>Spreadsheet</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="tab-day" aria-selected="true" data-view="day">Day plan</button>
+      <button class="tab" role="tab" id="tab-week" aria-selected="false" data-view="week">Week</button>
+      <button class="tab" role="tab" id="tab-log" aria-selected="false" data-view="log">Restock log</button>
+      <button class="tab" role="tab" id="tab-members" aria-selected="false" data-view="members" hidden>Members</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-day">
+    <div id="upnext"></div>
+    <div class="days" id="days"></div>
+    <div class="grid">
+      <div class="list" id="daylist"><div class="empty">Loading this week's restock pattern…</div></div>
+      <div class="mapcol">
+        <div class="mapbox">
+          <div id="map"></div>
+          <div id="pop" class="pop" role="dialog" aria-live="polite" hidden></div>
+          <div class="mapfoot">
+            <span class="lg"><i></i>Your route: your reliable stores + any you ticked</span>
+            <span>Scroll, pinch or use + / − to zoom; drag to move</span>
+            <span style="margin-left:auto">© OpenStreetMap contributors · routes: OSRM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="view-week" hidden><div class="weekwrap" id="week"></div></section>
+  <section id="view-log" hidden>
+    <div class="filters">
+      <select id="logStore" aria-label="Filter by store"><option value="">All stores</option></select>
+      <select id="logChain" aria-label="Filter by chain"><option value="">All chains</option><option>Target</option><option>Walmart</option><option>Sam's Club</option></select>
+      <input id="logQ" type="search" placeholder="Search (ETB, bundle, vendor…)" aria-label="Search the log">
+    </div>
+    <div class="tblwrap" id="log"></div>
+  </section>
+  <section id="view-members" hidden><div id="members" class="tblwrap"></div></section>
+</main>
+
+<div class="overlay" id="onboard" hidden>
+  <form class="modal" id="onboardForm" novalidate>
+    <h2 id="obTitle">Which stores do you hit?</h2>
+    <p id="obIntro">Tick the stores you actually go to. Your daily route and map are built from these, and the rest show up as optional stops.</p>
+    <div class="field">
+      <label for="discord">Your Discord username</label>
+      <input id="discord" name="discord" autocomplete="off" maxlength="40" placeholder="e.g. tannerr">
+    </div>
+    <div class="groups" id="groups"></div>
+    <div class="actions">
+      <span class="err" id="obErr" hidden></span>
+      <span class="note" id="obNote"></span>
+      <button class="btn" type="button" id="obCancel">Not now</button>
+      <button class="btn primary" type="submit" id="obSave">Save my stores</button>
+    </div>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const FULL={Sun:"Sunday",Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",Fri:"Friday",Sat:"Saturday"};
+const CONF={H:["★★★","Likely"],M:["★★","Possible"],L:["★","Long shot"]};
+const SLOTS=[[360,480],[480,600],[600,720],[720,840],[840,960],[960,1080]];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let DATA=null, ROUTES={}, STORE={}, mapStores=[];
+let state={view:"day",day:null,onlyMine:false,mine:new Set(),extras:{},discord:"",saved:false};
+let cap={user:null,db:null,uid:null,owner:false,dl:null};
+
+function nowNY(){
+  const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date());
+  const g=t=>(p.find(x=>x.type===t)||{}).value;
+  let h=parseInt(g("hour"),10); if(h===24) h=0;
+  return {day:g("weekday").slice(0,3),min:h*60+parseInt(g("minute"),10)};
+}
+function fmtMin(m){ if(m==null) return "time ?"; const h=Math.floor(m/60),mm=Math.round(m%60); const ap=h<12?"AM":"PM"; return ((h%12)||12)+":"+String(mm).padStart(2,"0")+" "+ap; }
+function slotLabel(a,b){const f=m=>((Math.floor(m/60)%12)||12)+(m<720?" AM":" PM");return f(a)+" – "+f(b);}
+function slotOf(m){ if(m==null) return -1; for(let i=0;i<SLOTS.length;i++) if(m<SLOTS[i][1]) return i; return SLOTS.length-1; }
+function fmtDate(s){ if(!s) return "–"; const d=new Date(s+"T12:00:00"); return d.toLocaleDateString("en-US",{weekday:"short",month:"numeric",day:"numeric"}); }
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* ---------- map projection (OSM zoom 12, base.png origin) ---------- */
+function px(lat,lon){const N=256*Math.pow(2,DATA.map.z);const x=(lon+180)/360*N-DATA.map.ox;const r=lat*Math.PI/180;const y=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N-DATA.map.oy;return [x,y];}
+function decode(str){const pts=[];let i=0,lat=0,lng=0;while(i<str.length){for(let k=0;k<2;k++){let sh=0,r=0,b;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5;}while(b>=32);const d=(r&1)?~(r>>1):(r>>1);if(k===0)lat+=d;else lng+=d;}pts.push(px(lat/1e5,lng/1e5));}return pts;}
+const legCache={};
+function leg(a,b){ // store names
+  const i=STORE[a].map,j=STORE[b].map; if(i==null||j==null) return null;
+  const key=Math.min(i,j)+"-"+Math.max(i,j); const r=ROUTES[key]; if(!r||!r[1]) return {pts:[px(STORE[a].lat,STORE[a].lon),px(STORE[b].lat,STORE[b].lon)],min:null};
+  if(!legCache[key]) legCache[key]=decode(r[1]);
+  const p=legCache[key]; return {pts:(i<j?p:p.slice().reverse()),min:r[0]};
+}
+
+/* ---------- route building ---------- */
+function isStrong(e){ return e.conf==="H" || (e.conf==="M" && (e.n||0)>=2); }
+function onMap(s){ return !!(STORE[s]&&STORE[s].map!=null); }
+function dayEntries(day){
+  const seen=new Set(), out=[];
+  for(const e of (DATA.schedule[day]||[])){ if(seen.has(e.store)) continue; seen.add(e.store); out.push(e); }
+  return out;
+}
+function extrasFor(day){ return new Set((state.extras&&state.extras[day])||[]); }
+function lastOnDay(store,day){
+  const idx=DAYS.indexOf(day);
+  const rows=DATA.log.filter(r=>r.store===store&&r.kind==="Regular"&&!/^(NO |UNCONFIRMED)/.test(r.what)&&!/^checked/i.test(r.time||"")&&new Date(r.date+"T12:00:00").getDay()===idx);
+  return rows[0]||null; // log is newest-first
+}
+function routeEntry(day,store){
+  const es=(DATA.schedule[day]||[]).filter(e=>e.store===store);
+  return es.find(isStrong)||es[0]||null;
+}
+function buildRoute(day){
+  const ex=extrasFor(day);
+  const stores=[...new Set((DATA.schedule[day]||[]).map(e=>e.store))].filter(onMap);
+  const main=stores.map(st=>routeEntry(day,st)).filter(e=>(state.mine.has(e.store)&&isStrong(e))||ex.has(e.store))
+    .sort((a,b)=>(a.avg??9999)-(b.avg??9999));
+  return {main,alts:[]};
+}
+
+/* ---------- SVG map ---------- */
+let MAPMARKS={};
+function renderMap(day){
+  const el=$("#map"); hidePop();
+  const {main,alts}=buildRoute(day);
+  const shown=main.map(m=>m.store).concat(alts.map(a=>a.e.store));
+  let pts=shown.map(s=>px(STORE[s].lat,STORE[s].lon));
+  if(!pts.length){ el.innerHTML=`<div class="mapempty">${state.mine.size?"None of your stores have a reliable "+FULL[day]+" restock. Tick a greyed-out store in the list to add it here.":"Pick your stores to build a route."}</div>`; MAPMARKS={}; return; }
+  let x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1]));
+  const pad=Math.max(70,Math.max(x1-x0,y1-y0)*0.12);
+  x0-=pad;x1+=pad;y0-=pad;y1+=pad;
+  let w=x1-x0,h=y1-y0; const minW=420; if(w<minW){x0-=(minW-w)/2;w=minW;} if(h<w*0.9){y0-=(w*0.9-h)/2;h=w*0.9;} if(w<h*0.75){x0-=(h*0.75-w)/2;w=h*0.75;}
+  x0=Math.max(0,Math.min(x0,DATA.map.w-w)); y0=Math.max(0,Math.min(y0,DATA.map.h-h)); w=Math.min(w,DATA.map.w); h=Math.min(h,DATA.map.h);
+  const fs=w/36, sw=w/230;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" role="img" aria-label="${esc(FULL[day])} route map">`;
+  s+=`<image href="base.jpg" x="0" y="0" width="${DATA.map.w}" height="${DATA.map.h}" preserveAspectRatio="none"/>`;
+  s+=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#ffffff" fill-opacity=".22"/>`;
+  const line=p=>p.map((q,i)=>(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)).join("");
+  const RC="#6D28D9", AC="#E05A0C";
+  for(const a of alts){ if(!a.from) continue; const g=leg(a.from,a.e.store); if(!g) continue;
+    s+=`<path d="${line(g.pts)}" fill="none" stroke="#fff" stroke-width="${sw*2.4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s+=`<path d="${line(g.pts)}" fill="none" stroke="${AC}" stroke-width="${sw*1.3}" stroke-dasharray="${sw*0.1} ${sw*2.2}" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  for(let i=1;i<main.length;i++){ const g=leg(main[i-1].store,main[i].store); if(!g) continue;
+    s+=`<path d="${line(g.pts)}" fill="none" stroke="#fff" stroke-width="${sw*3.4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s+=`<path d="${line(g.pts)}" fill="none" stroke="${RC}" stroke-width="${sw*1.9}" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  const placed=[]; const marks=[];
+  main.forEach((m,i)=>marks.push({s:m.store,tag:String(i+1),main:true,e:m}));
+  alts.forEach((a,j)=>marks.push({s:a.e.store,tag:"ABCDEFGH"[j],main:false,e:a.e}));
+  const R=fs*0.95;
+  for(const m of marks){const p=px(STORE[m.s].lat,STORE[m.s].lon);m.p=p;placed.push([p[0]-R,p[1]-R,p[0]+R,p[1]+R]);}
+  const chainCol={T:"#B91C1C",W:"#1D4ED8",S:"#15803D"};
+  const ov=(b)=>{let a=0;for(const o of placed){const ix=Math.min(b[2],o[2])-Math.max(b[0],o[0]),iy=Math.min(b[3],o[3])-Math.max(b[1],o[1]);if(ix>0&&iy>0)a+=ix*iy;}
+    const out=Math.max(0,x0-b[0])+Math.max(0,b[2]-(x0+w))+Math.max(0,y0-b[1])+Math.max(0,b[3]-(y0+h)); return a+out*1e4;};
+  let pins="";
+  MAPMARKS={};
+  for(const m of marks){
+    const st=STORE[m.s]; const f=m.main?fs:fs*0.85; const t1=m.s;
+    const tw=t1.length*f*0.56+f*0.8, th=f*1.5;
+    let best=null;
+    for(const dx of [1.6,4,7]) for(let k=0;k<9;k++){ const dys=k?[k*f*1.25,-k*f*1.25]:[0];
+      for(const dy of dys) for(const side of [1,-1]){
+        const ox=side*dx*f*0.5, cx=m.p[0]+ox, cy=m.p[1]+dy;
+        const b=side>0?[cx,cy-th/2,cx+tw,cy+th/2]:[cx-tw,cy-th/2,cx,cy+th/2];
+        const sc=ov(b)+(Math.abs(ox)+Math.abs(dy))*0.5; if(!best||sc<best.sc) best={b,sc,cx,cy,side}; } }
+    placed.push(best.b);
+    const col=chainCol[st.chain], ec=m.main?RC:AC;
+    let g=`<g class="pin" tabindex="0" role="button" data-s="${esc(m.s)}" aria-label="${esc(m.s)} details">`;
+    if(Math.abs(best.cy-m.p[1])>1||Math.abs(best.cx-m.p[0])>f*1.2) g+=`<line x1="${m.p[0]}" y1="${m.p[1]}" x2="${best.side>0?best.b[0]:best.b[2]}" y2="${best.cy}" stroke="${ec}" stroke-width="${sw*0.6}"/>`;
+    g+=`<rect class="lab" x="${best.b[0]}" y="${best.b[1]}" width="${best.b[2]-best.b[0]}" height="${th}" rx="${f*0.35}" fill="#fff" fill-opacity=".95" stroke="${ec}" stroke-width="${sw*(m.main?0.8:0.55)}"/>`;
+    g+=`<text x="${best.b[0]+f*0.4}" y="${best.cy}" dominant-baseline="central" font-family="Public Sans, system-ui, sans-serif" font-size="${f}" font-weight="${m.main?800:600}" fill="${col}">${esc(t1)}</text>`;
+    g+=`<circle class="dot" cx="${m.p[0]}" cy="${m.p[1]}" r="${m.main?R:R*0.8}" fill="#fff" stroke="${ec}" stroke-width="${sw*(m.main?1.2:0.9)}"/>`;
+    g+=`<text x="${m.p[0]}" y="${m.p[1]}" text-anchor="middle" dominant-baseline="central" font-family="Public Sans, system-ui, sans-serif" font-size="${m.main?f*1.05:f*0.9}" font-weight="800" fill="${ec}">${m.tag}</text></g>`;
+    pins+=g; MAPMARKS[m.s]={main:m.main,tag:m.tag,e:m.e};
+  }
+  s+=pins+"</svg>";
+  el.innerHTML=s+`<div class="zoomctl"><button type="button" class="zb" data-z="in" aria-label="Zoom in">+</button><button type="button" class="zb" data-z="out" aria-label="Zoom out">−</button><button type="button" class="zb" data-z="reset" aria-label="Reset zoom">⟲</button></div>`;
+  setupZoom(el.querySelector("svg"),{x0,y0,w,h});
+  el.querySelectorAll(".pin").forEach(p=>{
+    const name=p.getAttribute("data-s");
+    p.addEventListener("mouseenter",()=>showPop(name,p,false));
+    p.addEventListener("mouseleave",()=>{ if(!popPinned) hidePop(); });
+    p.addEventListener("click",ev=>{ev.stopPropagation(); showPop(name,p,true);});
+    p.addEventListener("keydown",ev=>{ if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();showPop(name,p,true);} });
+  });
+}
+let popPinned=false, ZOOM=null;
+function setupZoom(svg,base){
+  svg.querySelectorAll("path,line,.pin circle,.pin rect").forEach(e=>{const w=e.getAttribute("stroke-width"); if(w) e.dataset.sw=w;});
+  const pins=[...svg.querySelectorAll(".pin")].map(g=>{const c=g.querySelector(".dot");return {g,x:+c.getAttribute("cx"),y:+c.getAttribute("cy")};});
+  const MAXK=4;
+  const z={x:base.x0,y:base.y0,w:base.w,h:base.h};
+  ZOOM={svg,base,z};
+  function clamp(){ const k=base.w/z.w; if(k<1){z.w=base.w;z.h=base.h;} if(base.w/z.w>MAXK){z.w=base.w/MAXK;z.h=base.h/MAXK;}
+    z.x=Math.max(0,Math.min(z.x,DATA.map.w-z.w)); z.y=Math.max(0,Math.min(z.y,DATA.map.h-z.h)); }
+  function apply(){ clamp(); const k=base.w/z.w;
+    svg.setAttribute("viewBox",`${z.x} ${z.y} ${z.w} ${z.h}`);
+    svg.querySelectorAll("path[data-sw]").forEach(e=>e.setAttribute("stroke-width",e.dataset.sw/Math.sqrt(k)));
+    pins.forEach(p=>p.g.setAttribute("transform",k===1?"":`translate(${p.x} ${p.y}) scale(${1/k}) translate(${-p.x} ${-p.y})`));
+    svg.classList.toggle("zoomed",k>1.01); }
+  function zoomAt(f,cx,cy){ // f>1 zooms in; cx,cy in map units
+    const nw=z.w/f, nh=z.h/f; z.x=cx-(cx-z.x)*(nw/z.w); z.y=cy-(cy-z.y)*(nh/z.h); z.w=nw; z.h=nh; apply(); hidePop(); }
+  function toMap(clientX,clientY){ const r=svg.getBoundingClientRect(); return [z.x+(clientX-r.left)/r.width*z.w, z.y+(clientY-r.top)/r.height*z.h]; }
+  svg.addEventListener("wheel",ev=>{ ev.preventDefault(); const [mx,my]=toMap(ev.clientX,ev.clientY); zoomAt(ev.deltaY<0?1.25:0.8,mx,my); },{passive:false});
+  const ptrs=new Map(); let drag=null, pinch=null, moved=false;
+  svg.addEventListener("pointerdown",ev=>{ ptrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY}); moved=false;
+    if(ptrs.size===1) drag={x:ev.clientX,y:ev.clientY,zx:z.x,zy:z.y};
+    if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),w:z.w}; drag=null; } });
+  svg.addEventListener("pointermove",ev=>{ if(!ptrs.has(ev.pointerId)) return; ptrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+    const r=svg.getBoundingClientRect();
+    if(pinch&&ptrs.size===2){ const [a,b]=[...ptrs.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y); const [mx,my]=toMap((a.x+b.x)/2,(a.y+b.y)/2);
+      const target=pinch.w*pinch.d/Math.max(d,1); zoomAt(z.w/target,mx,my); moved=true; return; }
+    if(drag){ const dx=ev.clientX-drag.x, dy=ev.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>4){ moved=true; if(!svg.hasPointerCapture(ev.pointerId)) svg.setPointerCapture(ev.pointerId); }
+      if(moved&&base.w/z.w>1.01){ z.x=drag.zx-dx/r.width*z.w; z.y=drag.zy-dy/r.height*z.h; apply(); hidePop(); } } });
+  const end=ev=>{ ptrs.delete(ev.pointerId); if(ptrs.size<2) pinch=null; if(!ptrs.size) drag=null; };
+  svg.addEventListener("pointerup",end); svg.addEventListener("pointercancel",end);
+  svg.addEventListener("click",ev=>{ if(moved){ ev.stopPropagation(); ev.preventDefault(); moved=false; } },true);
+  svg.addEventListener("dblclick",ev=>{ const [mx,my]=toMap(ev.clientX,ev.clientY); zoomAt(1.6,mx,my); });
+  svg.parentElement.querySelectorAll(".zb").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); const t=b.dataset.z;
+    if(t==="reset"){ Object.assign(z,{x:base.x0,y:base.y0,w:base.w,h:base.h}); apply(); hidePop(); return; }
+    zoomAt(t==="in"?1.5:1/1.5, z.x+z.w/2, z.y+z.h/2); }));
+  apply();
+}
+function hidePop(){ const p=$("#pop"); if(p){p.hidden=true;} popPinned=false; }
+function popHTML(name){
+  const mk=MAPMARKS[name]; const e=mk.e; const st=STORE[name]; const day=state.day;
+  const k=CONF[e.conf]||CONF.L;
+  const emp=/employee/i.test(e.who), ven=/vendor/i.test(e.who);
+  const kind=ven?["Vendor restock","A third-party vendor stocks this store. Slower, but it shows up on a fairly regular day."]:emp?["Employee restock","Store staff put product out. These are becoming more common and harder to predict."]:["Stocker unclear","Reports don't say whether a vendor or employees stocked it."];
+  const lastD=lastOnDay(name,day);
+  return `<div class="pop-h"><span class="pop-tag ${mk.main?"stop":"opt"}">${mk.main?"Stop "+mk.tag:"Option "+mk.tag}</span><b class="c${st.chain}">${esc(name)}</b><button type="button" class="pop-x" aria-label="Close">×</button></div>
+    <div class="pop-row"><span class="pop-k">${FULL[day]}</span><span>${e.avg==null?"time unknown":"~"+fmtMin(e.avg)} <span class="pop-m">(${esc(e.label)})</span></span></div>
+    <div class="pop-row"><span class="pop-k">Confidence</span><span><span class="stars">${k[0]}</span> ${k[1]}${e.n?` · ${e.n} logged ${FULL[day]} drop${e.n>1?"s":""}`:""}</span></div>
+    <div class="pop-row"><span class="pop-k">Stocked by</span><span><span class="kind ${ven?"v":emp?"e":"u"}">${kind[0]}</span></span></div>
+    <div class="pop-note">${kind[1]}</div>
+    ${lastD?`<div class="pop-note"><b>Last ${FULL[day]}:</b> ${fmtDate(lastD.date)} ${esc(lastD.time)} · ${esc(lastD.what)}</div>`:""}
+    ${e.note?`<div class="pop-note"><b>Note:</b> ${esc(e.note)}</div>`:""}
+    ${st.tip?`<div class="pop-note">${esc(st.tip)}</div>`:""}`;
+}
+function showPop(name,pinEl,pin){
+  if(!MAPMARKS[name]) return;
+  const pop=$("#pop"), box=$(".mapbox"); pop.innerHTML=popHTML(name); pop.hidden=false; popPinned=!!pin;
+  pop.querySelector(".pop-x").addEventListener("click",ev=>{ev.stopPropagation();hidePop();});
+  const dot=pinEl.querySelector(".dot").getBoundingClientRect(), bb=box.getBoundingClientRect();
+  const pw=pop.offsetWidth, ph=pop.offsetHeight;
+  let left=dot.left-bb.left+dot.width/2-pw/2; left=Math.max(8,Math.min(left,bb.width-pw-8));
+  let top=dot.top-bb.top-ph-10; if(top<8) top=dot.bottom-bb.top+10;
+  pop.style.left=left+"px"; pop.style.top=Math.max(8,top)+"px";
+}
+function focusOnMap(name){
+  const p=[...document.querySelectorAll("#map .pin")].find(g=>g.getAttribute("data-s")===name);
+  if(!p) return false; $(".mapbox").scrollIntoView({block:"nearest",behavior:"smooth"}); setTimeout(()=>showPop(name,p,true),250); return true;
+}
+
+/* ---------- views ---------- */
+function confHTML(c){const k=CONF[c]||CONF.L;return `<span class="stars">${k[0]}</span> ${k[1]}`;}
+function renderDays(){
+  const now=nowNY(); const box=$("#days");
+  box.innerHTML=DAYS.map(d=>`<button type="button" class="chip" data-day="${d}" aria-pressed="${d===state.day}">${FULL[d].slice(0,3)}${d===now.day?'<span class="today">Today</span>':""}</button>`).join("")+
+    `<label class="toggle"><input type="checkbox" id="onlyMine" ${state.onlyMine?"checked":""}> Only my stores</label>`;
+  box.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{state.day=b.dataset.day;renderDay();}));
+  $("#onlyMine").addEventListener("change",e=>{state.onlyMine=e.target.checked;lsSet("rr_only",state.onlyMine);renderDay();});
+}
+function renderUpNext(){
+  const now=nowNY(); const box=$("#upnext");
+  if(state.day!==now.day||!state.mine.size){box.innerHTML="";return;}
+  const ents=dayEntries(now.day).filter(e=>state.mine.has(e.store)&&e.avg!=null);
+  const soon=ents.filter(e=>e.avg>=now.min-60).sort((a,b)=>a.avg-b.avg).slice(0,3);
+  if(!soon.length){box.innerHTML=`<div class="hint" style="margin-bottom:14px">None of your stores usually stock later today. Check tomorrow's plan.</div>`;return;}
+  box.innerHTML=`<div class="upnext">${soon.map((e,i)=>{const st=STORE[e.store];return `<div class="un"><span class="k">${i?"Then":"Up next"}</span><span class="v c${st.chain}">${esc(e.store)}</span><span class="t">~${fmtMin(e.avg)} · ${confHTML(e.conf)}</span></div>`;}).join("")}</div>`;
+}
+function weakNote(e,day){
+  const st=STORE[e.store]; const last=lastOnDay(e.store,day);
+  if(last){
+    const who=/employee/i.test(last.who)?"Employees randomly stocked":/vendor/i.test(last.who)?"A vendor stocked":"Someone reported a restock";
+    const t=(last.time||"").replace(/^~/,"").replace(/^(at open.*)$/i,"at open");
+    const when=/^\d/.test(t)?"around "+t:(t?"("+t.charAt(0).toLowerCase()+t.slice(1)+")":"");
+    return `${who} ${fmtDate(last.date)} ${when}. Only happened once on a ${FULL[day]}, so it's not on your route. Might be worth checking if you're in the area.`;
+  }
+  return `No logged ${FULL[day]} drop yet. This slot is a guess from the store's other days, so it's not on your route. Worth a look if you're nearby.`;
+}
+function renderDay(){
+  if(!DATA) return;
+  renderDays(); renderUpNext();
+  const day=state.day, now=nowNY(); const list=$("#daylist");
+  const {main,alts}=buildRoute(day); const ex=extrasFor(day);
+  const stopNo={}; main.forEach((m,i)=>stopNo[m.store]=i+1);
+  const optNo={}; alts.forEach((a,j)=>optNo[a.e.store]=["ABCDEFGH"[j],a.from]);
+  const sched=(DATA.schedule[day]||[]); const firsts=new Set(); const firstEntry={};
+  dayEntries(day).forEach(e=>firstEntry[e.store]=e);
+  let html="";
+  if(!state.mine.size) html+=`<div class="hint">Pick the stores you go to (My stores) and this turns into your own route.</div>`;
+  if(!sched.length){ list.innerHTML=html+`<div class="empty">No regular restocks seen on ${FULL[day]}s. (9/27 was a one-off Target event.)</div>`; renderMap(day); return; }
+  let lastSlot=null, shownAny=false;
+  for(const e of sched){
+    const mine=state.mine.has(e.store), extra=ex.has(e.store);
+    if(state.onlyMine&&!mine&&!extra) continue;
+    const isFirst=routeEntry(day,e.store)===e;
+    const st=STORE[e.store]||{chain:"T"}; const si=slotOf(e.avg); const weak=!isStrong(e);
+    if(si!==lastSlot){ lastSlot=si; const isNow=(day===now.day&&si>=0&&now.min>=SLOTS[si][0]&&now.min<SLOTS[si][1]);
+      html+=`<div class="slot-h${isNow?" now":""}">${si<0?"Time unknown":slotLabel(...SLOTS[si])}</div>`; }
+    shownAny=true;
+    let badge="";
+    if(isFirst&&stopNo[e.store]){ const i=stopNo[e.store]; let mins=""; if(i>1){const g=leg(main[i-2].store,e.store); if(g&&g.min!=null) mins=` · ${g.min} min from stop ${i-1}`;} badge=`<span class="badge stop">Stop ${i}${mins}</span>`; }
+    else if(isFirst&&optNo[e.store]){ const [L,from]=optNo[e.store]; let mins=""; if(from){const g=leg(from,e.store); if(g&&g.min!=null) mins=` · ${g.min} min from ${from}`;} badge=`<span class="badge opt">Option ${L}${mins}</span>`; }
+    else if(mine) badge=`<span class="badge mine">Your store</span>`;
+    const avgTxt=e.avg==null?"time unknown":"~"+fmtMin(e.avg);
+    const basis=e.n?`avg of ${e.n} logged drop${e.n>1?"s":""} on ${FULL[day]}s`:"estimate";
+    const kindCls=/vendor/i.test(e.who)?"v":/employee/i.test(e.who)?"e":"u";
+    const kindTxt=kindCls==="v"?"Vendor restock":kindCls==="e"?"Employee restock":"Stocker unclear";
+    const onRouteAnyway=state.mine.has(e.store)&&isStrong(routeEntry(day,e.store));
+    const canAdd=weak&&onMap(e.store)&&!onRouteAnyway;
+    const cid="add-"+day+"-"+e.store.replace(/[^a-z0-9]/gi,"")+"-"+(e.avg??"x");
+    html+=`<article class="card ${st.chain}${mine?" mine":""}${weak?" weak":""}${weak&&(extra||onRouteAnyway)?" added":""}" data-s="${esc(e.store)}">
+      <div class="row1"><button type="button" class="name linkish" data-focus="${esc(e.store)}">${esc(e.store)}</button><span class="at">@ ${avgTxt}</span>${badge}</div>
+      <div class="meta">Usual window ${esc(e.label)} · ${basis}</div>
+      <div class="kv">${confHTML(e.conf)} · <span class="kind ${kindCls}">${kindTxt}</span>${e.note?" · "+esc(e.note):""}</div>
+      ${weak?`<div class="weaknote">${onRouteAnyway?"Extra time slot that only showed up once. This store is already on your route at its usual time.":esc(weakNote(e,day))}</div>`:""}
+      ${st.last||st.next?`<div class="kv"><b>Last:</b> ${fmtDate(st.last)}${st.lastTime&&st.lastTime!=="Unknown"?" · "+esc(st.lastTime):""} &nbsp; <b>Next:</b> ${st.next?fmtDate(st.next)+" · ":""}${esc(st.window||"")}</div>`:""}
+      ${st.tip?`<div class="tip">${esc(st.tip)}</div>`:""}
+      ${canAdd?`<label class="addmap"><input type="checkbox" autocomplete="off" data-add="${esc(e.store)}" ${extra?"checked":""}> Add to my ${FULL[day]} map</label>`:""}
+      ${st.map==null&&st.address?`<div class="tip">Not on the map · ${esc(st.address)}</div>`:""}
+    </article>`;
+  }
+  if(!shownAny) html+=`<div class="empty">None of your stores usually stock on ${FULL[day]}s.</div>`;
+  list.innerHTML=html;
+  list.querySelectorAll("[data-add]").forEach(cb=>cb.addEventListener("click",ev=>{ if(!ev.isTrusted) return; toggleExtra(day,cb.getAttribute("data-add"),!extrasFor(day).has(cb.getAttribute("data-add"))); }));
+  list.querySelectorAll("[data-focus]").forEach(b=>b.addEventListener("click",()=>{ if(!focusOnMap(b.getAttribute("data-focus"))) toast("That store isn't on this map"); }));
+  renderMap(day);
+}
+async function toggleExtra(day,store,on){
+  state.extras=Object.assign({},state.extras||{}); const s=new Set(state.extras[day]||[]); on?s.add(store):s.delete(store);
+  if(s.size) state.extras[day]=[...s]; else delete state.extras[day];
+  lsSet("rr_prefs",{discord:state.discord,stores:[...state.mine],extras:state.extras});
+  renderDay();
+  if(cap.db&&cap.uid){ try{ const ref=cap.db.doc("members/"+cap.uid); const snap=await ref.get();
+    if(snap.exists){ const d=Object.assign({},snap.data()); d.extras=state.extras; await ref.set(d); } }catch(e){} }
+}
+function renderWeek(){
+  const now=nowNY();
+  let h=`<table class="week"><thead><tr><th class="slot">Time</th>${DAYS.map(d=>`<th class="${d===now.day?"today":""}">${FULL[d]}</th>`).join("")}</tr></thead><tbody>`;
+  const rows=SLOTS.map((s,i)=>[i,slotLabel(...s)]).concat([[-1,"Time ?"]]);
+  for(const [si,lab] of rows){
+    const isNowSlot=si>=0&&now.min>=SLOTS[si][0]&&now.min<SLOTS[si][1];
+    const cells=DAYS.map(d=>(DATA.schedule[d]||[]).filter(e=>slotOf(e.avg)===si));
+    if(si<0&&!cells.some(c=>c.length)) continue;
+    h+=`<tr><th class="slot${isNowSlot?" now":""}">${lab}</th>`+cells.map((c,k)=>`<td class="${isNowSlot&&DAYS[k]===now.day?"nowcell":""}">${c.map(e=>{const st=STORE[e.store]||{chain:"T"};return `<span class="wchip ${st.chain}${state.mine.has(e.store)?" mine":""}"><b>${esc(e.store)}</b><span>${e.avg==null?"?":"~"+fmtMin(e.avg)} · ${(CONF[e.conf]||CONF.L)[0]}</span></span>`;}).join("")}</td>`).join("")+`</tr>`;
+  }
+  $("#week").innerHTML=h+`</tbody></table>`;
+}
+function renderLog(){
+  const s=$("#logStore").value, c=$("#logChain").value, q=$("#logQ").value.trim().toLowerCase();
+  const rows=DATA.log.filter(r=>(!s||r.store===s)&&(!c||r.chain===c)&&(!q||(r.what+" "+r.store+" "+r.who).toLowerCase().includes(q)));
+  const cc={"Target":"cT","Walmart":"cW","Sam's Club":"cS"};
+  $("#log").innerHTML=`<table class="log"><thead><tr><th>Date</th><th>Time</th><th>Store</th><th>What happened</th><th>Stocked by</th><th>Confidence</th></tr></thead><tbody>${
+    rows.slice(0,400).map(r=>`<tr><td class="d">${fmtDate(r.date)}</td><td class="d">${esc(r.time)}</td><td class="${cc[r.chain]||""}">${esc(r.store)}${r.kind!=="Regular"?` <span class="pill">${esc(r.kind)}</span>`:""}</td><td>${esc(r.what)}</td><td>${esc(r.who)}</td><td><span class="pill ${esc(r.conf)}">${esc(r.conf)}</span></td></tr>`).join("")
+  }</tbody></table>${rows.length?"":`<div class="empty">No restocks match those filters.</div>`}`;
+}
+async function renderMembers(){
+  const box=$("#members"); if(!cap.db){box.innerHTML=`<div class="empty">Member list isn't available in this view.</div>`;return;}
+  box.innerHTML=`<div class="empty">Loading members…</div>`;
+  try{
+    const snap=await cap.db.collection("members").get();
+    const docs=snap.docs.filter(d=>d.exists).map(d=>Object.assign({id:d.id},d.data()));
+    let ps={}; try{ ps=await cap.user.profiles(docs.map(d=>d.id)); }catch(e){}
+    docs.sort((a,b)=>String(b.lastSeen||"").localeCompare(String(a.lastSeen||"")));
+    box.innerHTML=`<table class="log"><thead><tr><th>Discord</th><th>Claude account</th><th>Stores</th><th>Visits</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>${
+      docs.map(d=>`<tr><td><b>${esc(d.discord||"–")}</b></td><td>${esc((ps[d.id]&&ps[d.id].name)||"Someone")}</td><td>${(d.stores||[]).map(esc).join(", ")||"–"}</td><td class="d">${esc(d.visits||1)}</td><td class="d">${esc((d.firstSeen||"").slice(0,10))}</td><td class="d">${esc((d.lastSeen||"").replace("T"," ").slice(0,16))}</td></tr>`).join("")
+    }</tbody></table>${docs.length?"":`<div class="empty">Nobody has saved their stores yet. When friends open the page and pick stores, they show up here.</div>`}`;
+  }catch(e){ box.innerHTML=`<div class="empty">Couldn't load members (${esc(e.code||e.message||"error")}).</div>`; }
+}
+function setView(v){
+  state.view=v; lsSet("rr_view",v);
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.view===v)));
+  ["day","week","log","members"].forEach(x=>$("#view-"+x).hidden=(x!==v));
+  if(v==="day") renderDay(); if(v==="week") renderWeek(); if(v==="log") renderLog(); if(v==="members") renderMembers();
+}
+
+/* ---------- onboarding ---------- */
+function openOnboard(first){
+  const groups=[["T","Targets"],["W","Walmarts"],["S","Sam's Clubs"]];
+  $("#groups").innerHTML=groups.map(([c,t])=>`<div class="group ${c}"><h3>${t}</h3>${DATA.stores.filter(s=>s.chain===c).sort((a,b)=>a.name.localeCompare(b.name)).map(s=>`<label class="check"><input type="checkbox" name="store" id="st-${esc(s.name.replace(/[^a-z0-9]/gi,""))}" value="${esc(s.name)}" ${state.mine.has(s.name)?"checked":""}><span>${esc(s.name)}<small>${esc(s.address||"")}</small></span></label>`).join("")}</div>`).join("");
+  $("#discord").value=state.discord||"";
+  $("#obTitle").textContent=first?"Welcome! Which stores do you hit?":"Your stores";
+  $("#obErr").hidden=true;
+  $("#obNote").textContent=cap.db&&cap.uid?"":"Saved on this device.";
+  $("#onboard").hidden=false; setTimeout(()=>$("#discord").focus(),30);
+}
+async function savePrefs(discord,stores){
+  state.discord=discord; state.mine=new Set(stores);
+  lsSet("rr_prefs",{discord,stores,extras:state.extras});
+  if(cap.db&&cap.uid){
+    const ref=cap.db.doc("members/"+cap.uid); const nowIso=new Date().toISOString();
+    try{
+      const prev=await ref.get(); const p=prev.exists?prev.data():{};
+      await ref.set({discord,stores,extras:state.extras||{},firstSeen:p.firstSeen||nowIso,lastSeen:nowIso,visits:(p.visits||0)+(prev.exists?0:1)});
+      state.saved=true; return "Saved. Your route is ready.";
+    }catch(e){ return "Saved on this device only. Ask Tanner to add you as an Editor so it syncs."; }
+  }
+  return "Saved on this device.";
+}
+
+/* ---------- capabilities ---------- */
+async function wireCaps(){
+  if(!window.claude||!window.claude.use) return;
+  try{ cap.user=await window.claude.use("user"); }catch(e){}
+  try{ cap.db=await window.claude.use("db"); }catch(e){}
+  try{ cap.dl=await window.claude.use("downloads"); }catch(e){}
+  if(cap.user){ try{cap.uid=await cap.user.id();}catch(e){} try{cap.owner=await cap.user.isOwner();}catch(e){} }
+  if(cap.owner){ $("#tab-members").hidden=false; if(cap.dl&&cap.db) $("#btnXlsx").hidden=false; }
+  if(cap.db&&cap.uid){
+    try{
+      const ref=cap.db.doc("members/"+cap.uid); const snap=await ref.get();
+      if(snap.exists){ const d=snap.data(); state.discord=d.discord||""; state.mine=new Set(d.stores||[]); state.extras=d.extras||{}; lsSet("rr_prefs",{discord:state.discord,stores:[...state.mine],extras:state.extras});
+        const last=Date.parse(d.lastSeen||0); if(!last||Date.now()-last>30*60*1000){ try{await ref.update({lastSeen:new Date().toISOString(),visits:(d.visits||1)+1});}catch(e){} }
+        setView(state.view); return; }
+      openOnboard(true); return;
+    }catch(e){}
+  }
+  if(!lsGet("rr_prefs")) openOnboard(true);
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  const p=lsGet("rr_prefs"); if(p){state.discord=p.discord||"";state.mine=new Set(p.stores||[]);state.extras=p.extras||{};}
+  state.onlyMine=!!lsGet("rr_only");
+  const v=lsGet("rr_view"); if(v&&v!=="members") state.view=v;
+  state.day=nowNY().day;
+  try{
+    const [d,r]=await Promise.all([fetch("data.json",{cache:"no-store"}).then(x=>x.json()),fetch("routes.json").then(x=>x.json())]);
+    DATA=d; ROUTES=r; DATA.stores.forEach(s=>STORE[s.name]=s);
+  }catch(e){ $("#daylist").innerHTML=`<div class="empty">Couldn't load the restock data. Reload the page to try again.</div>`; return; }
+  const u=new Date(DATA.updated+":00-04:00");
+  $("#stamp").textContent="Updated "+u.toLocaleString("en-US",{weekday:"short",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",timeZone:"America/New_York"});
+  const sel=$("#logStore"); [...new Set(DATA.log.map(r=>r.store))].sort().forEach(n=>{const o=document.createElement("option");o.textContent=n;sel.appendChild(o);});
+  setView(state.view);
+  wireCaps();
+  setInterval(()=>{ if(state.view==="day") {renderDays();renderUpNext();} if(state.view==="week") renderWeek(); },60000);
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>setView(t.dataset.view)));
+["#logStore","#logChain"].forEach(s=>$(s).addEventListener("change",renderLog));
+$("#logQ").addEventListener("input",renderLog);
+$("#btnStores").addEventListener("click",()=>{ if(DATA) openOnboard(false); });
+$("#obCancel").addEventListener("click",()=>{$("#onboard").hidden=true;});
+$("#onboardForm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const discord=$("#discord").value.trim(); const stores=[...document.querySelectorAll('input[name="store"]:checked')].map(i=>i.value);
+  if(!discord){ $("#obErr").textContent="Add your Discord username."; $("#obErr").hidden=false; $("#discord").focus(); return; }
+  if(!stores.length){ $("#obErr").textContent="Tick at least one store."; $("#obErr").hidden=false; return; }
+  $("#obSave").disabled=true; const msg=await savePrefs(discord,stores); $("#obSave").disabled=false;
+  $("#onboard").hidden=true; toast(msg); setView(state.view==="members"?"day":state.view);
+});
+$("#btnXlsx").addEventListener("click",async()=>{
+  if(!cap.dl||!cap.db||!cap.owner||!cap.uid) return;
+  try{
+    const snap=await cap.db.collection("data/users/"+cap.uid).get();
+    const parts=snap.docs.filter(d=>d.exists&&/^xlsx_\d+$/.test(d.id)).sort((a,b)=>a.id.localeCompare(b.id)).map(d=>d.data().b64||"");
+    if(!parts.length){ toast("The spreadsheet hasn't been uploaded yet."); return; }
+    const bin=atob(parts.join("")); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+    await cap.dl.save({filename:"Tampa_Pokemon_Restock_Tracker.xlsx",data:buf}); toast("Spreadsheet saved");
+  }catch(e){ if(e&&e.code==="declined") return; toast("Couldn't save the spreadsheet here."); }
+});
+document.addEventListener("click",ev=>{ if(!ev.target.closest("#pop")&&!ev.target.closest("#map .pin")) hidePop(); });
+document.addEventListener("keydown",ev=>{ if(ev.key==="Escape") hidePop(); });
+boot();
+})();
+</script>
+
+</body>
+</html>
