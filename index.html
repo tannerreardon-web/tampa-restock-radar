@@ -14,7 +14,7 @@
 :root{
   --bg:#EDF0F4; --surface:#FFFFFF; --surface2:#F6F8FA; --ink:#141A26; --muted:#596476; --line:#D5DBE4;
   --route:#6D28D9; --route-soft:#EDE7FB; --alt:#E05A0C; --alt-soft:#FDEBDD;
-  --target:#B91C1C; --walmart:#1D4ED8; --sams:#15803D; --t-soft:#FDF0F0; --w-soft:#EEF3FE; --s-soft:#ECF8F0;
+  --target:#B91C1C; --walmart:#1D4ED8; --sams:#15803D; --bn:#0F766E; --t-soft:#FDF0F0; --w-soft:#EEF3FE; --s-soft:#ECF8F0; --b-soft:#E6F6F3;
   --now:#F59E0B; --now-soft:#FEF3C7; --star:#B45309; --danger:#B42318;
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -24,12 +24,12 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E131B; --surface:#161D28; --surface2:#1C2431; --ink:#E7EBF1; --muted:#98A2B3; --line:#2B3443;
   --route:#A78BFA; --route-soft:#2A2145; --alt:#FB923C; --alt-soft:#3A2416;
-  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E;
+  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --bn:#2DD4BF; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E; --b-soft:#122A27;
   --now:#F59E0B; --now-soft:#3A2E0E; --star:#FBBF24; --danger:#F97066; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E131B; --surface:#161D28; --surface2:#1C2431; --ink:#E7EBF1; --muted:#98A2B3; --line:#2B3443;
   --route:#A78BFA; --route-soft:#2A2145; --alt:#FB923C; --alt-soft:#3A2416;
-  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E;
+  --target:#F87171; --walmart:#7AA7FF; --sams:#4ADE80; --bn:#2DD4BF; --t-soft:#2B1A1C; --w-soft:#18223A; --s-soft:#15291E; --b-soft:#122A27;
   --now:#F59E0B; --now-soft:#3A2E0E; --star:#FBBF24; --danger:#F97066; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -68,7 +68,7 @@ main{padding-block:16px 48px}
 .slot-h.now{color:var(--star)}
 .slot-h.now::before{content:"NOW";background:var(--now);color:#111;border-radius:4px;padding:1px 6px;letter-spacing:.08em}
 .card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--c,var(--line));border-radius:var(--r);padding:12px 14px;display:grid;gap:4px;min-width:0}
-.card.T{--chain:var(--target);--soft:var(--t-soft)} .card.W{--chain:var(--walmart);--soft:var(--w-soft)} .card.S{--chain:var(--sams);--soft:var(--s-soft)}
+.card.T{--chain:var(--target);--soft:var(--t-soft)} .card.W{--chain:var(--walmart);--soft:var(--w-soft)} .card.S{--chain:var(--sams);--soft:var(--s-soft)} .card.B{--chain:var(--bn);--soft:var(--b-soft)}
 .card{--c:var(--chain)}
 .card.weak:not(.added){--c:var(--muted);background:var(--surface2);color:var(--muted)}
 .card.weak:not(.added) .at,.card.weak:not(.added) .kv b{color:var(--muted)}
@@ -114,7 +114,7 @@ table.week th.slot{font-family:var(--f-mono);font-size:.75rem;white-space:nowrap
 table.week th.slot.now{background:var(--now);color:#111}
 table.week td.nowcell{background:var(--now-soft)}
 .wchip{display:block;border-left:4px solid var(--c);background:var(--surface2);border-radius:5px;padding:4px 6px;margin-bottom:4px}
-.wchip.T{--c:var(--target)} .wchip.W{--c:var(--walmart)} .wchip.S{--c:var(--sams)}
+.wchip.T{--c:var(--target)} .wchip.W{--c:var(--walmart)} .wchip.S{--c:var(--sams)} .wchip.B{--c:var(--bn)}
 .wchip b{color:var(--c);font-weight:800}
 .wchip.mine{outline:2px solid var(--route);outline-offset:-1px}
 .wchip span{display:block;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
@@ -126,7 +126,7 @@ table.log{border-collapse:collapse;width:100%;font-size:.84rem;min-width:760px}
 table.log th,table.log td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 table.log th{background:var(--surface2);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 table.log td.d{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
-.cT{color:var(--target);font-weight:700}.cW{color:var(--walmart);font-weight:700}.cS{color:var(--sams);font-weight:700}
+.cT{color:var(--target);font-weight:700}.cW{color:var(--walmart);font-weight:700}.cS{color:var(--sams);font-weight:700}.cB{color:var(--bn);font-weight:700}
 .pill{font-size:.7rem;font-weight:800;border-radius:999px;padding:2px 8px;background:var(--surface2);border:1px solid var(--line);white-space:nowrap}
 .pill.High{background:var(--s-soft);color:var(--sams);border-color:var(--sams)}
 .pill.Low{color:var(--muted)}
@@ -139,7 +139,7 @@ table.log td.d{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric
 .field label{font-weight:700;font-size:.9rem}
 .groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .group h3{margin:0 0 6px;font-family:var(--f-display);font-stretch:85%;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}
-.group.T h3{color:var(--target)}.group.W h3{color:var(--walmart)}.group.S h3{color:var(--sams)}
+.group.T h3{color:var(--target)}.group.W h3{color:var(--walmart)}.group.S h3{color:var(--sams)}.group.B h3{color:var(--bn)}
 .check{display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-radius:6px;font-size:.9rem}
 .check:hover{background:var(--surface2)}
 .check input{width:18px;height:18px;margin-top:1px;accent-color:var(--route);flex:none}
@@ -189,7 +189,7 @@ table.log td.d{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric
 <header class="top">
   <div class="wrap">
     <div class="bar">
-      <div class="brand"><h1>Restock <b>Radar</b></h1><span class="sub">Tampa · Brandon · Riverview · Pasco</span></div>
+      <div class="brand"><h1>Restock <b>Radar</b></h1><span class="sub">Target · Walmart · Sam's · Barnes &amp; Noble — Tampa Bay</span></div>
       <div class="spacer"></div>
       <span class="stamp" id="stamp">Loading…</span>
       <button class="btn" id="btnStores" type="button">My stores</button>
@@ -227,7 +227,7 @@ table.log td.d{font-family:var(--f-mono);white-space:nowrap;font-variant-numeric
   <section id="view-log" hidden>
     <div class="filters">
       <select id="logStore" aria-label="Filter by store"><option value="">All stores</option></select>
-      <select id="logChain" aria-label="Filter by chain"><option value="">All chains</option><option>Target</option><option>Walmart</option><option>Sam's Club</option></select>
+      <select id="logChain" aria-label="Filter by chain"><option value="">All chains</option><option>Target</option><option>Walmart</option><option>Sam's Club</option><option>Barnes &amp; Noble</option></select>
       <input id="logQ" type="search" placeholder="Search (ETB, bundle, vendor…)" aria-label="Search the log">
     </div>
     <div class="tblwrap" id="log"></div>
@@ -348,7 +348,7 @@ function renderMap(day){
   alts.forEach((a,j)=>marks.push({s:a.e.store,tag:"ABCDEFGH"[j],main:false,e:a.e}));
   const R=fs*0.95;
   for(const m of marks){const p=px(STORE[m.s].lat,STORE[m.s].lon);m.p=p;placed.push([p[0]-R,p[1]-R,p[0]+R,p[1]+R]);}
-  const chainCol={T:"#B91C1C",W:"#1D4ED8",S:"#15803D"};
+  const chainCol={T:"#B91C1C",W:"#1D4ED8",S:"#15803D",B:"#0F766E"};
   const ov=(b)=>{let a=0;for(const o of placed){const ix=Math.min(b[2],o[2])-Math.max(b[0],o[0]),iy=Math.min(b[3],o[3])-Math.max(b[1],o[1]);if(ix>0&&iy>0)a+=ix*iy;}
     const out=Math.max(0,x0-b[0])+Math.max(0,b[2]-(x0+w))+Math.max(0,y0-b[1])+Math.max(0,b[3]-(y0+h)); return a+out*1e4;};
   let pins="";
@@ -550,7 +550,7 @@ function renderWeek(){
 function renderLog(){
   const s=$("#logStore").value, c=$("#logChain").value, q=$("#logQ").value.trim().toLowerCase();
   const rows=DATA.log.filter(r=>(!s||r.store===s)&&(!c||r.chain===c)&&(!q||(r.what+" "+r.store+" "+r.who).toLowerCase().includes(q)));
-  const cc={"Target":"cT","Walmart":"cW","Sam's Club":"cS"};
+  const cc={"Target":"cT","Walmart":"cW","Sam's Club":"cS","Barnes & Noble":"cB"};
   $("#log").innerHTML=`<table class="log"><thead><tr><th>Date</th><th>Time</th><th>Store</th><th>What happened</th><th>Stocked by</th><th>Confidence</th></tr></thead><tbody>${
     rows.slice(0,400).map(r=>`<tr><td class="d">${fmtDate(r.date)}</td><td class="d">${esc(r.time)}</td><td class="${cc[r.chain]||""}">${esc(r.store)}${r.kind!=="Regular"?` <span class="pill">${esc(r.kind)}</span>`:""}</td><td>${esc(r.what)}</td><td>${esc(r.who)}</td><td><span class="pill ${esc(r.conf)}">${esc(r.conf)}</span></td></tr>`).join("")
   }</tbody></table>${rows.length?"":`<div class="empty">No restocks match those filters.</div>`}`;
@@ -577,7 +577,7 @@ function setView(v){
 
 /* ---------- onboarding ---------- */
 function openOnboard(first){
-  const groups=[["T","Targets"],["W","Walmarts"],["S","Sam's Clubs"]];
+  const groups=[["T","Targets"],["W","Walmarts"],["S","Sam's Clubs"],["B","Barnes & Noble"]];
   $("#groups").innerHTML=groups.map(([c,t])=>`<div class="group ${c}"><h3>${t}</h3>${DATA.stores.filter(s=>s.chain===c).sort((a,b)=>a.name.localeCompare(b.name)).map(s=>`<label class="check"><input type="checkbox" name="store" id="st-${esc(s.name.replace(/[^a-z0-9]/gi,""))}" value="${esc(s.name)}" ${state.mine.has(s.name)?"checked":""}><span>${esc(s.name)}<small>${esc(s.address||"")}</small></span></label>`).join("")}</div>`).join("");
   $("#discord").value=state.discord||"";
   $("#obTitle").textContent=first?"Welcome! Which stores do you hit?":"Your stores";
